@@ -1,9 +1,11 @@
-# eseguibili classici
+# binari
 *.out
 *.exe
 
-# eseguibili senza estensione (pattern tipo es1A, es2B, ecc.)
+# eseguibili tipo es1A, es2B, ecc.
 es[0-9]*[A-Z]
 
-# sicurezza: NON ignorare i .c
+# NON ignorare codice
 !*.c
+!*.py
+!*.ipynb
