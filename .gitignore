@@ -1,0 +1,9 @@
+# eseguibili classici
+*.out
+*.exe
+
+# eseguibili senza estensione (pattern tipo es1A, es2B, ecc.)
+es[0-9]*[A-Z]
+
+# sicurezza: NON ignorare i .c
+!*.c
