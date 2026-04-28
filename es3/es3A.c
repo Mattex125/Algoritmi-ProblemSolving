@@ -28,7 +28,8 @@ int solveT(int pauses[], int ttoal, int tpassed, int n, int*whenpausestarts){
             if (whenpausestarts[i] == -1) {
                 // scelta
                 whenpausestarts[i] = tpassed;
-                if (solveT(pauses,ttoal,tpassed+1,n,whenpausestarts)!=-1)//if i got it solved
+                if (countCurrentInPause(pauses, tpassed, n, whenpausestarts) <= 2 &&
+                    solveT(pauses,ttoal,tpassed+1,n,whenpausestarts)!=-1)//if i got it solved
                     return 1;
                 // UNDO my scelta (so i can do other choices)
                 whenpausestarts[i] = -1;
@@ -42,7 +43,8 @@ int solveT(int pauses[], int ttoal, int tpassed, int n, int*whenpausestarts){
                     whenpausestarts[i]=tpassed;
                     whenpausestarts[j]=tpassed;
 
-                    if(solveT(pauses,ttoal,tpassed+1,n,whenpausestarts)!=-1)
+                    if(countCurrentInPause(pauses, tpassed, n, whenpausestarts) <= 2 &&
+                       solveT(pauses,ttoal,tpassed+1,n,whenpausestarts)!=-1)
                         return 1;
 
                     whenpausestarts[i]=-1;

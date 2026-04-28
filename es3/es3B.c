@@ -1,155 +1,157 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct {
-    int idx;
-    int duration;
-} WorkerPause;
+/*
+  Versione in stile "tuo codice" della Soluzione B.
+  Idee principali (come descritto):
+  - trasformiamo il problema in uno zaino: cerchiamo un sottoinsieme
+    di pause con somma s tale che totalpauses - T <= s <= T.
+  - se esiste, dividiamo i lavoratori in due pile A e B (A = sottoinsieme)
+    e mettiamo i lavoratori di ogni pila in pausa uno dopo l'altro,
+    quindi in ogni pila c'è al massimo 1 lavoratore in pausa.
+  - se la verifica fallisce => nessuna soluzione.
+*/
 
-int cmpDescDuration(const void *a, const void *b) {
-    const WorkerPause *wa = (const WorkerPause *)a;
-    const WorkerPause *wb = (const WorkerPause *)b;
-    if (wb->duration != wa->duration) {
-        return wb->duration - wa->duration;
+//IA generated zaino
+int knapsack_fill(int pauses[], int T, int n, int *prev, int *picked){
+    int *reachable;
+
+    reachable = calloc(T + 1, sizeof(int));
+
+    for (int s = 0; s <= T; s++){
+        prev[s] = -1;
+        picked[s] = -1;
     }
-    return wa->idx - wb->idx;
-}
 
-int countCurrentInPause(int pauses[], int t, int n, int *whenpausestarts){
-    int currentInPause = 0;
-    for (int i = 1; i <= n; i++) {
-        if (whenpausestarts[i] != -1 &&
-            t >= whenpausestarts[i] &&
-            t < whenpausestarts[i] + pauses[i]) {
-            currentInPause++;
+    reachable[0] = 1;
+
+    for (int i = 1; i <= n; i++){
+        int d;
+        d = pauses[i];
+        for (int s = T; s >= d; s--){
+            if (reachable[s - d] == 1 && reachable[s] == 0){
+                reachable[s] = 1;
+                prev[s] = s - d;
+                picked[s] = i;
+            }
         }
     }
-    return currentInPause;
+
+    free(reachable);
+
+    return 0;
 }
 
-int solve(int pauses[],int t,int n, int* whenpausestarts){
-    int loadA = 0;
-    int loadB = 0;
-    WorkerPause *workers = malloc(sizeof(WorkerPause) * (size_t)n);
-    int *pileA = malloc(sizeof(int) * (size_t)n);
-    int *pileB = malloc(sizeof(int) * (size_t)n);
-    int sizeA = 0;
-    int sizeB = 0;
+/* buildAstack: esegue il backtracing a partire da 'found' e
+   ritorna un array inA allocato (inA[i]=1 se i appartiene ad A).
+   Restituisce NULL in caso di errore (backtracing invalido). */
+int *buildAstack(int n, int prev[], int picked[], int found){
+    int *inA;
+    int i;
+    int trace;
+    int w;
 
-    if (workers == NULL || pileA == NULL || pileB == NULL) {
-        free(workers);
-        free(pileA);
-        free(pileB);
-        return -1;
+    inA = calloc(n + 1, sizeof(int));
+
+    trace = found;
+    while (trace > 0){
+        w = picked[trace];
+        if (w < 1 || w > n){
+            free(inA);
+            return NULL;
+        }
+        inA[w] = 1;
+        trace = prev[trace];
     }
 
-    for (int i = 1; i <= n; i++) {
+    return inA;
+}
+
+int solve(int pauses[], int T, int n, int *whenpausestarts){
+    int totalpauses=0; /* somma di tutte le pause */
+
+    for (int i = 1; i <= n; i++){
         whenpausestarts[i] = -1;
-        if (pauses[i] > t) {
-            free(workers);
-            free(pileA);
-            free(pileB);
+        if (pauses[i] > T) //a pause is bigger than worktime
             return -1;
-        }
-        workers[i - 1].idx = i;
-        workers[i - 1].duration = pauses[i];
+        totalpauses = totalpauses + pauses[i];
+    }
+    if (totalpauses > 2*T) //if is imp to fit all
+        return -1;
+
+    int *prev= malloc(sizeof(int) * (T + 1));   /* prev[s] = somma precedente nel backtracking */
+    int *picked= malloc(sizeof(int) * (T + 1)); /* picked[s] = lavoratore scelto per arrivare a s */
+
+    knapsack_fill(pauses, T, n, prev, picked);
+
+    /* Cerco una somma valida per la pila A:
+       deve stare in [totalpauses - T, T], cosi anche la pila B <= T */
+    int lower; /* limite inferiore valido per la somma della pila A */
+
+    lower = totalpauses - T;
+    if (lower < 0){
+        lower = 0;
     }
 
-    qsort(workers, (size_t)n, sizeof(WorkerPause), cmpDescDuration);
+    int found = -1; //is there a good Astack valid for B too?
 
-    for (int i = 0; i < n; i++) {
-        int worker = workers[i].idx;
-        int d = workers[i].duration;
-        int placed = 0;
-
-        if (loadA <= loadB) {
-            if (loadA + d <= t) {
-                pileA[sizeA++] = worker;
-                loadA += d;
-                placed = 1;
-            } else if (loadB + d <= t) {
-                pileB[sizeB++] = worker;
-                loadB += d;
-                placed = 1;
-            }
-        } else {
-            if (loadB + d <= t) {
-                pileB[sizeB++] = worker;
-                loadB += d;
-                placed = 1;
-            } else if (loadA + d <= t) {
-                pileA[sizeA++] = worker;
-                loadA += d;
-                placed = 1;
-            }
+    for (int i = T; i >= lower; i--){
+        if (i == 0){
+            found = 0;
+            break;
         }
-
-        if (!placed) {
-            free(workers);
-            free(pileA);
-            free(pileB);
-            return -1;
+        if (picked[i] != -1){
+            found = i;
+            break;
         }
     }
 
-    int timeA = 0;
-    int timeB = 0;
-
-    for (int i = 0; i < sizeA; i++) {
-        int worker = pileA[i];
-        whenpausestarts[worker] = timeA;
-        timeA += pauses[worker];
-    }
-
-    for (int i = 0; i < sizeB; i++) {
-        int worker = pileB[i];
-        whenpausestarts[worker] = timeB;
-        timeB += pauses[worker];
-    }
-
-    if (timeA > t || timeB > t) {
-        free(workers);
-        free(pileA);
-        free(pileB);
+    if (found == -1){
+        free(prev);
+        free(picked);
         return -1;
     }
 
-    free(workers);
-    free(pileA);
-    free(pileB);
+    /* Backtracing: uso la funzione buildAstack per ottenere inA */
+    int *inA = buildAstack(n, prev, picked, found);
 
+    //costruisco pause
+    int timeA=0; /* tempo cumulato usato nella pila A */
+    int timeB=0; /* tempo cumulato usato nella pila B */
+
+    for (int i = 1; i <= n; i++){
+        if (inA[i] == 1){
+            whenpausestarts[i] = timeA;
+            timeA = timeA + pauses[i];
+        }
+    }
+    for (int i = 1; i <= n; i++){
+        if (inA[i] == 0){
+            whenpausestarts[i] = timeB;
+            timeB = timeB + pauses[i];
+        }
+    }
+    free(prev);
+    free(picked);
+    free(inA);
     return 1;
 }
 
 int main(){
-    int T,N;
-    if (scanf("%d %d", &T, &N) != 2) {
-        return 1;
-    }
-    int *pauses=malloc(sizeof(int) * (N + 1));
-    int *whenpausestarts=malloc(sizeof(int) * (N + 1));
-    if (pauses == NULL || whenpausestarts == NULL) {
-        free(pauses);
-        free(whenpausestarts);
-        return 1;
-    }
-    for (int i=1; i<=N; i++) {
-        if (scanf("%d", &pauses[i]) != 1) {
-            free(pauses);
-            free(whenpausestarts);
-            return 1;
-        }
-    }
-    int sol = solve(pauses,T,N,whenpausestarts);
-    if(sol==1){
-        for(int i=1; i<=N; i++)
+    int T, N;
+    if (scanf("%d %d", &T, &N) != 2) return 0;
+    int *pauses = malloc(sizeof(int) * (N + 1));
+    int *whenpausestarts = malloc(sizeof(int) * (N + 1));
+    for (int i = 1; i <= N; i++) 
+        scanf("%d", &pauses[i]);
+    int sol = solve(pauses, T, N, whenpausestarts);
+    if (sol == 1){
+        for (int i = 1; i <= N; i++) 
             printf("%d ", whenpausestarts[i]);
         printf("\n");
-    }
-    else{
+    } else {
         printf("no possible sol");
     }
-
-    free(pauses);
-    free(whenpausestarts);
+    free(pauses); free(whenpausestarts);
+    return 0;
 }
