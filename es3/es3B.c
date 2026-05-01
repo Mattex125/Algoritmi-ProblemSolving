@@ -42,9 +42,7 @@ int knapsack_fill(int pauses[], int T, int n, int *prev, int *picked){
     return 0;
 }
 
-/* buildAstack: esegue il backtracing a partire da 'found' e
-   ritorna un array inA allocato (inA[i]=1 se i appartiene ad A).
-   Restituisce NULL in caso di errore (backtracing invalido). */
+//IA generated --> builds a bitmap of who's in A stack
 int *buildAstack(int n, int prev[], int picked[], int found){
     int *inA;
     int i;
@@ -84,36 +82,17 @@ int solve(int pauses[], int T, int n, int *whenpausestarts){
 
     knapsack_fill(pauses, T, n, prev, picked);
 
-    /* Cerco una somma valida per la pila A:
-       deve stare in [totalpauses - T, T], cosi anche la pila B <= T */
-    int lower; /* limite inferiore valido per la somma della pila A */
-
-    lower = totalpauses - T;
-    if (lower < 0){
-        lower = 0;
-    }
-
-    int found = -1; //is there a good Astack valid for B too?
-
-    for (int i = T; i >= lower; i--){
-        if (i == 0){
-            found = 0;
-            break;
-        }
-        if (picked[i] != -1){
-            found = i;
-            break;
+    int AT;//stack a used time
+    for(AT=T; AT>=0; AT--){//search for a max cap
+        if(picked[AT]!=-1){//a that size is good
+            if (totalpauses-AT<=T) //is there a possible B?
+                break;    
         }
     }
-
-    if (found == -1){
-        free(prev);
-        free(picked);
+    if (AT==-1)
         return -1;
-    }
 
-    /* Backtracing: uso la funzione buildAstack per ottenere inA */
-    int *inA = buildAstack(n, prev, picked, found);
+    int *inA = buildAstack(n, prev, picked, AT);
 
     //costruisco pause
     int timeA=0; /* tempo cumulato usato nella pila A */
@@ -124,9 +103,7 @@ int solve(int pauses[], int T, int n, int *whenpausestarts){
             whenpausestarts[i] = timeA;
             timeA = timeA + pauses[i];
         }
-    }
-    for (int i = 1; i <= n; i++){
-        if (inA[i] == 0){
+        else{
             whenpausestarts[i] = timeB;
             timeB = timeB + pauses[i];
         }
