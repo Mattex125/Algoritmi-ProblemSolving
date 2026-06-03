@@ -78,7 +78,7 @@ int IsFeasableWithD(uint64_t *bitmap, long int L, long int controlled, int M, lo
         if (testBit(bm, h)) {
             if (removedCount > M) {
                 free(bm);
-                return 0; /* not feasible */
+                return -1; // 
             }
             clearBit(bm, h);
             removed[removedCount++] = h;
@@ -89,7 +89,7 @@ int IsFeasableWithD(uint64_t *bitmap, long int L, long int controlled, int M, lo
     while(h!=D){//lookup until the first is safe
         if(removedCount > M){
             free(bm);
-            return 0; //not feasable
+            return -1; // not feasable
         }
         else{
             if(h!=controlled){//if is not bit controlled
@@ -98,7 +98,7 @@ int IsFeasableWithD(uint64_t *bitmap, long int L, long int controlled, int M, lo
             }
             else{  //cant remove controlled (btw should be already covered up)
                 free (bm);
-                return 0;
+                return -1; // not feasable
             }
         }
         h=findNextStation(bm,0,D); //lookup if there are other ones
@@ -111,7 +111,7 @@ int IsFeasableWithD(uint64_t *bitmap, long int L, long int controlled, int M, lo
         if(next != controlled && prev!=controlled && next-prev<D){//not controllo involved and bad dist
             if(removedCount >= M){
                 free(bm);
-                return 0;
+                return -1; // not feasable
             }
             clearBit(bm,prev);
             removed[removedCount++]=prev;
@@ -153,7 +153,7 @@ int main() {
     while(high-low>1){
         mid=low + (high - low) / 2;
         feasable=IsFeasableWithD(bitmap,L,controllo,M,mid,removed);
-        if(feasable)
+        if(feasable != -1) // not feasable
             low=mid;
         else
             high=mid;
@@ -163,8 +163,14 @@ int main() {
     // Output richiesto 
     printf("Massimo valore spaziatura: %ld\n", low);
     printf("Stazioni chiuse: ");
-    for (int i = 0; i < feasable; i++) {
-        printf("%ld ", removed[i]);
+    
+    //if not feasable
+    if (feasable <= 0) {
+        printf("0");
+    } else {
+        for (int i = 0; i < feasable; i++) {
+            printf("%ld ", removed[i]);
+        }
     }
     printf("\n");
     free(bitmap); free(removed);

@@ -113,15 +113,14 @@ int main() {
     for (int i = 0; i < M; i++) best_removed[i] = -1;
 
 
-    // Se M è maggiore delle stazioni effettivamente rimovibili, lo limitiamo [cite: 7]
-    int actual_M = (M > n_rem) ? n_rem : M;
 
-    brute_force(bitmap, L, actual_M, controllo, 0, 0, current_removed, best_removed, &max_spacing);
 
-    // Output richiesto 
+    brute_force(bitmap, L, M, controllo, 0, 0, current_removed, best_removed, &max_spacing);
+
+    // Output
     printf("Massimo valore spaziatura: %d\n", max_spacing);
     printf("Stazioni chiuse: ");
-    for (int i = 0; i < actual_M; i++) {
+    for (int i = 0; i < M; i++) {
         if (best_removed[i] != -1) printf("%d ", best_removed[i]);
     }
     printf("\n");
