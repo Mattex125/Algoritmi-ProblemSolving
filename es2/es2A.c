@@ -55,7 +55,7 @@ int solve(int T,int A,int B,int C,int *prev){//returns time used
             result=solveT(i,A,B,C,prev);
         }
         if (i!=0) //if there's good sol
-            return i;  // return the time that was actually used
+            return ++i;  // return the time that was actually used
         else
             return -1; //no sol 
     }
